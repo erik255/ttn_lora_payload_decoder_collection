@@ -22,6 +22,12 @@ function dec2bin(dec) {
     return (dec >>> 0).toString(2);
 }
 
+function bytesToNumber(bytes) {
+    return bytes.reduce(function (carry, val, idx) {
+        return carry + Math.pow(2, idx * 8) * val
+    }, 0);
+}
+
 
 function decodeMeter(bytes) {
 // * date             -> date of measurement. See @parseDate
@@ -40,55 +46,26 @@ function decodeMeter(bytes) {
         return {
             isMeter: 1,
             date: parseDate([...bytes].slice(0, 4)),
-            activeEnergy: [...bytes].slice(4, 8).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            reactiveEnergy: [...bytes].slice(8, 12).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            apparentEnergy: [...bytes].slice(12, 16).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            runningTime: [...bytes].slice(16, 20).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
+            activeEnergy: bytesToNumber([...bytes].slice(4, 8)),
+            reactiveEnergy: bytesToNumber([...bytes].slice(8, 12)),
+            apparentEnergy: bytesToNumber([...bytes].slice(12, 16)),
+            runningTime: bytesToNumber([...bytes].slice(16, 20))
         }
     } else {
         return {
             isMeter: 1,
             moreInfo: 1,
             date: parseDate([...bytes].slice(0, 4)),
-            activeEnergy: [...bytes].slice(4, 8).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            reactiveEnergy: [...bytes].slice(8, 12).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            apparentEnergy: [...bytes].slice(12, 16).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-
-            activePower: [...bytes].slice(16, 18).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            reactivePower: [...bytes].slice(18, 20).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            apparentPower: [...bytes].slice(20, 22).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            voltage: [...bytes].slice(22, 24).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            current: [...bytes].slice(24, 26).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            period: [...bytes].slice(26, 28).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
-            runningTime: [...bytes].slice(28, 32).reduce(function (carry, val, idx) {
-                return carry + Math.pow(2, idx * 8) * val
-            }, 0),
+            activeEnergy: bytesToNumber([...bytes].slice(4, 8)),
+            reactiveEnergy: bytesToNumber([...bytes].slice(8, 12)),
+            apparentEnergy: bytesToNumber([...bytes].slice(12, 16)),
+            activePower: bytesToNumber([...bytes].slice(16, 18)),
+            reactivePower: bytesToNumber([...bytes].slice(18, 20)),
+            apparentPower: bytesToNumber([...bytes].slice(20, 22)),
+            voltage: bytesToNumber([...bytes].slice(22, 24)),
+            current: bytesToNumber([...bytes].slice(24, 26)),
+            period: bytesToNumber([...bytes].slice(26, 28)),
+            runningTime: bytesToNumber([...bytes].slice(28, 32)),
         }
     }
 }
@@ -105,10 +82,10 @@ function decodeIO(bytes) {
         date: parseDate([...bytes].slice(0, 4)),
         inputs_bin: dec2bin([...bytes].slice(4, 8).reduce(function (carry, val, idx) {
             return carry + Math.pow(2, idx * 8) * val
-        }, 0)).padStart(32,'0'),
+        }, 0)).padStart(32, '0'),
         outputs_bin: dec2bin([...bytes].slice(8, 12).reduce(function (carry, val, idx) {
             return carry + Math.pow(2, idx * 8) * val
-        }, 0)).padStart(32,'0'),
+        }, 0)).padStart(32, '0'),
         events: [...bytes].slice(12, 16).reduce(function (carry, val, idx) {
             return carry + Math.pow(2, idx * 8) * val
         }, 0),
@@ -117,7 +94,9 @@ function decodeIO(bytes) {
 
 function decodeTimeSync(bytes) {
     return {
-        isTimeSync: 1
+        isTimeSyncRequest: 1,
+        sync_id: [...bytes].slice(0, 4),
+        date: parseDate([...bytes].slice(0, 4)),
     }
 }
 
