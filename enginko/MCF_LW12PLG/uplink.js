@@ -7,15 +7,16 @@
 function parseDate(dateBytes) {
     let d = {
         dateBytes: dateBytes.reverse(),
-        tst: dateBytes[0] & 0,
         year: 2000 + (dateBytes[0] >> 1),  //7bit in first byt so shift)
-        month: (!!(dateBytes[0] & (1 << 0)) << 3) + (dateBytes[1] >> 5),
+        month: ((dateBytes[0] - ((dateBytes[0] >> 1) << 1)) << 3) + (dateBytes[1] >> 5),
         dom: dateBytes[1] - ((dateBytes[1] >> 5) << 5),
-        hour: dateBytes[2] >> 2,
-        min: dateBytes[2] - ((dateBytes[2] >> 2) << 2) + (dateBytes[3] >> 5),
-        sec: dateBytes[3] - ((dateBytes[3] >> 5) << 5)
+        hour: dateBytes[2] >> 3,
+        min: ((dateBytes[2] - ((dateBytes[2] >> 3) << 3)) << 3) + (dateBytes[3] >> 5),
+        sec: (dateBytes[3] - ((dateBytes[3] >> 5) << 5)) * 2
     };
-    return (new Date(d.year, d.month - 1, d.dom, d.hour, d.min, d.sec)).toISOString();
+     return d;
+    // console.log(d.year, d.month, d.dom, d.hour, d.min, d.sec);
+    //return (new Date(d.year, d.month - 1, d.dom, d.hour, d.min, d.sec)).toISOString();
 }
 
 function dec2bin(dec) {
@@ -52,6 +53,7 @@ function decodeMeter(bytes) {
             runningTime: bytesToNumber([...bytes].slice(16, 20))
         }
     } else {
+        let period = bytesToNumber([...bytes].slice(26, 28));
         return {
             isMeter: 1,
             moreInfo: 1,
@@ -62,9 +64,10 @@ function decodeMeter(bytes) {
             activePower: bytesToNumber([...bytes].slice(16, 18)),
             reactivePower: bytesToNumber([...bytes].slice(18, 20)),
             apparentPower: bytesToNumber([...bytes].slice(20, 22)),
-            voltage: bytesToNumber([...bytes].slice(22, 24)),
+            voltage: bytesToNumber([...bytes].slice(22, 24)) / 10,
             current: bytesToNumber([...bytes].slice(24, 26)),
-            period: bytesToNumber([...bytes].slice(26, 28)),
+            period: period,
+            frequency: period > 0 ? 1 / period * 1000000 : 0,
             runningTime: bytesToNumber([...bytes].slice(28, 32)),
         }
     }
@@ -96,7 +99,8 @@ function decodeTimeSync(bytes) {
     return {
         isTimeSyncRequest: 1,
         sync_id: [...bytes].slice(0, 4),
-        date: parseDate([...bytes].slice(0, 4)),
+        version: parseDate([...bytes].slice(4, 7)),
+        application: parseDate([...bytes].slice(7, 9)),
     }
 }
 
